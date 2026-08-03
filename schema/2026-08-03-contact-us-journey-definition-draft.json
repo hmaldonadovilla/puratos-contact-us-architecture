@@ -1,0 +1,1015 @@
+{
+  "documentType": "PuratosContactJourneyDefinition",
+  "draftStatus": "ARCHITECTURE_DRAFT",
+  "manifest": {
+    "definitionId": "contact-us",
+    "definitionVersion": "BE-0005-2026-08-03-01-draft",
+    "configurationVersion": "BE-0005-2026-08-03-01",
+    "renderingContractVersion": "1.0",
+    "jsonSchemaDialect": "http://json-schema.org/draft-07/schema#",
+    "rjsfCompatibility": "5.24.x",
+    "market": "BE",
+    "salesOrganisation": "0005",
+    "language": "en-BE",
+    "rolloutState": "PILOT",
+    "experienceVariant": "AEM_TARGET",
+    "entryNodeId": "account_access",
+    "safeFallback": "LEGACY",
+    "effectiveFrom": "2026-08-03T00:00:00Z",
+    "effectiveTo": null
+  },
+  "definitionPolicy": {
+    "serverAuthoritativeProgression": true,
+    "allowExecutableJavaScript": false,
+    "allowArbitraryUrls": false,
+    "allowUnknownWidgets": false,
+    "removeAdditionalProperties": true,
+    "countryFieldsResolvedBeforeDelivery": true,
+    "notes": [
+      "This is an illustrative Belgium-resolved definition; VAT is present because the example market requires it.",
+      "Another market receives its own immutable resolved version without the VAT property when VAT is not applicable.",
+      "The example entryNodeId is anonymous; OutSystems returns authenticated_options for a server-verified authenticated journey.",
+      "AEM may render allowed transitions for usability, but OutSystems validates the current node and returns the authoritative next node."
+    ]
+  },
+  "allowedCatalogue": {
+    "widgets": [
+      "PuratosCheckbox",
+      "PuratosRadio",
+      "PuratosSelect",
+      "PuratosText",
+      "PuratosTextArea",
+      "PuratosPhone",
+      "PuratosCommerceReferenceLookup"
+    ],
+    "fields": [
+      "PuratosCommerceReferenceLookup"
+    ],
+    "serverValidators": [
+      "VALIDATE_CONTACT_DETAILS",
+      "VALIDATE_VAT_FOR_MARKET",
+      "VALIDATE_COMMERCE_REFERENCE",
+      "VALIDATE_DISTRIBUTOR_APPLICATION"
+    ],
+    "serverDecisions": [
+      "EVALUATE_SERVICE_MODEL",
+      "RESOLVE_CUSTOMER_REQUEST_TYPE"
+    ],
+    "actions": [
+      "OPEN_FAQ",
+      "OPEN_AI_ASSISTANT",
+      "CALL_CUSTOMER_CARE",
+      "SUBMIT_CONTACT_REQUEST"
+    ],
+    "destinations": [
+      "MYPURATOS_LOGIN",
+      "MYPURATOS_EXISTING_CUSTOMER_REGISTRATION",
+      "MYPURATOS_NEW_CUSTOMER_REGISTRATION",
+      "WEBSHOP",
+      "DISTRIBUTOR_FINDER"
+    ]
+  },
+  "capabilities": {
+    "faq": true,
+    "aiAssistant": true,
+    "callCustomerCare": true,
+    "personalSupport": true,
+    "distributorApplication": true,
+    "webshopRedirect": true,
+    "authenticatedOrderLookup": true,
+    "vatField": true
+  },
+  "nodes": [
+    {
+      "id": "account_access",
+      "type": "FORM",
+      "contentKeys": {
+        "heading": "contact.account.heading",
+        "description": "contact.account.description"
+      },
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "$id": "puratos://contact-us/account-access/v1",
+        "type": "object",
+        "properties": {
+          "hasMyPuratosAccount": {
+            "type": "boolean",
+            "title": "contact.account.hasAccount"
+          }
+        },
+        "required": [
+          "hasMyPuratosAccount"
+        ],
+        "additionalProperties": false
+      },
+      "uiSchema": {
+        "hasMyPuratosAccount": {
+          "ui:widget": "PuratosRadio"
+        },
+        "ui:submitButtonOptions": {
+          "norender": true
+        }
+      },
+      "transitions": [
+        {
+          "when": {
+            "answerPath": "hasMyPuratosAccount",
+            "operator": "EQ",
+            "value": true
+          },
+          "nextNodeId": "login_redirect"
+        },
+        {
+          "when": {
+            "answerPath": "hasMyPuratosAccount",
+            "operator": "EQ",
+            "value": false
+          },
+          "nextNodeId": "customer_status"
+        }
+      ]
+    },
+    {
+      "id": "customer_status",
+      "type": "FORM",
+      "contentKeys": {
+        "heading": "contact.customerStatus.heading"
+      },
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "$id": "puratos://contact-us/customer-status/v1",
+        "type": "object",
+        "properties": {
+          "customerStatus": {
+            "type": "string",
+            "title": "contact.customerStatus.question",
+            "oneOf": [
+              {
+                "const": "EXISTING_CUSTOMER",
+                "title": "contact.customerStatus.existing"
+              },
+              {
+                "const": "NEW_TO_PURATOS",
+                "title": "contact.customerStatus.new"
+              }
+            ]
+          }
+        },
+        "required": [
+          "customerStatus"
+        ],
+        "additionalProperties": false
+      },
+      "uiSchema": {
+        "customerStatus": {
+          "ui:widget": "PuratosRadio"
+        },
+        "ui:submitButtonOptions": {
+          "norender": true
+        }
+      },
+      "transitions": [
+        {
+          "when": {
+            "answerPath": "customerStatus",
+            "operator": "EQ",
+            "value": "EXISTING_CUSTOMER"
+          },
+          "nextNodeId": "existing_customer_registration_redirect"
+        },
+        {
+          "when": {
+            "answerPath": "customerStatus",
+            "operator": "EQ",
+            "value": "NEW_TO_PURATOS"
+          },
+          "nextNodeId": "new_customer_intent"
+        }
+      ]
+    },
+    {
+      "id": "new_customer_intent",
+      "type": "FORM",
+      "contentKeys": {
+        "heading": "contact.intent.heading"
+      },
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "$id": "puratos://contact-us/new-customer-intent/v1",
+        "type": "object",
+        "properties": {
+          "intent": {
+            "type": "string",
+            "title": "contact.intent.question",
+            "oneOf": [
+              {
+                "const": "BUY_PRODUCTS",
+                "title": "contact.intent.buyProducts"
+              },
+              {
+                "const": "DISTRIBUTOR_APPLICATION",
+                "title": "contact.intent.becomeDistributor"
+              },
+              {
+                "const": "HOME_BAKER",
+                "title": "contact.intent.homeBaker"
+              }
+            ]
+          }
+        },
+        "required": [
+          "intent"
+        ],
+        "additionalProperties": false
+      },
+      "uiSchema": {
+        "intent": {
+          "ui:widget": "PuratosRadio"
+        },
+        "ui:submitButtonOptions": {
+          "norender": true
+        }
+      },
+      "transitions": [
+        {
+          "when": {
+            "answerPath": "intent",
+            "operator": "EQ",
+            "value": "BUY_PRODUCTS"
+          },
+          "nextNodeId": "buy_products_profile"
+        },
+        {
+          "when": {
+            "answerPath": "intent",
+            "operator": "EQ",
+            "value": "DISTRIBUTOR_APPLICATION"
+          },
+          "nextNodeId": "distributor_application"
+        },
+        {
+          "when": {
+            "answerPath": "intent",
+            "operator": "EQ",
+            "value": "HOME_BAKER"
+          },
+          "nextNodeId": "distributor_finder_redirect"
+        }
+      ]
+    },
+    {
+      "id": "buy_products_profile",
+      "type": "FORM",
+      "contentKeys": {
+        "heading": "contact.buyProfile.heading"
+      },
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "$id": "puratos://contact-us/buy-products-profile/v1",
+        "type": "object",
+        "properties": {
+          "businessType": {
+            "type": "string",
+            "title": "contact.company.businessType",
+            "enum": [
+              "ARTISAN",
+              "INDUSTRY",
+              "HORECA",
+              "CHOCOLATIER",
+              "BAKERY_CHAIN",
+              "OTHER"
+            ]
+          },
+          "employeeBand": {
+            "type": "string",
+            "title": "contact.company.employeeBand",
+            "enum": [
+              "ONE",
+              "TWO_TO_FIVE",
+              "SIX_TO_TWENTY",
+              "MORE_THAN_TWENTY"
+            ]
+          }
+        },
+        "required": [
+          "businessType",
+          "employeeBand"
+        ],
+        "dependencies": {
+          "businessType": {
+            "oneOf": [
+              {
+                "properties": {
+                  "businessType": {
+                    "enum": [
+                      "BAKERY_CHAIN"
+                    ]
+                  },
+                  "storeCountBand": {
+                    "type": "string",
+                    "title": "contact.company.storeCountBand",
+                    "enum": [
+                      "ONE",
+                      "TWO_TO_FIVE",
+                      "SIX_TO_TWENTY",
+                      "MORE_THAN_TWENTY"
+                    ]
+                  }
+                },
+                "required": [
+                  "storeCountBand"
+                ]
+              },
+              {
+                "properties": {
+                  "businessType": {
+                    "enum": [
+                      "ARTISAN",
+                      "INDUSTRY",
+                      "HORECA",
+                      "CHOCOLATIER",
+                      "OTHER"
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "uiSchema": {
+        "businessType": {
+          "ui:widget": "PuratosSelect"
+        },
+        "employeeBand": {
+          "ui:widget": "PuratosRadio"
+        },
+        "storeCountBand": {
+          "ui:widget": "PuratosSelect"
+        },
+        "ui:order": [
+          "businessType",
+          "employeeBand",
+          "storeCountBand"
+        ],
+        "ui:submitButtonOptions": {
+          "norender": true
+        }
+      },
+      "transitions": [
+        {
+          "when": {
+            "operator": "VALID"
+          },
+          "nextNodeId": "service_model_decision"
+        }
+      ]
+    },
+    {
+      "id": "service_model_decision",
+      "type": "SERVER_DECISION",
+      "decisionKey": "EVALUATE_SERVICE_MODEL",
+      "allowedOutcomes": {
+        "SELF_SERVICE_ONLY": "new_customer_registration_redirect",
+        "SELF_SERVICE_OR_PERSONAL": "service_model_choice",
+        "PERSONAL_ASSISTANCE": "personal_support_request",
+        "MANUAL_REVIEW": "manual_review_terminal"
+      }
+    },
+    {
+      "id": "service_model_choice",
+      "type": "FORM",
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "$id": "puratos://contact-us/service-model-choice/v1",
+        "type": "object",
+        "properties": {
+          "serviceChoice": {
+            "type": "string",
+            "title": "contact.serviceChoice.question",
+            "oneOf": [
+              {
+                "const": "REGISTER_WEBSHOP",
+                "title": "contact.serviceChoice.webshop"
+              },
+              {
+                "const": "REQUEST_PERSONAL_SUPPORT",
+                "title": "contact.serviceChoice.personalSupport"
+              }
+            ]
+          }
+        },
+        "required": [
+          "serviceChoice"
+        ],
+        "additionalProperties": false
+      },
+      "uiSchema": {
+        "serviceChoice": {
+          "ui:widget": "PuratosRadio"
+        },
+        "ui:submitButtonOptions": {
+          "norender": true
+        }
+      },
+      "transitions": [
+        {
+          "when": {
+            "answerPath": "serviceChoice",
+            "operator": "EQ",
+            "value": "REGISTER_WEBSHOP"
+          },
+          "nextNodeId": "new_customer_registration_redirect"
+        },
+        {
+          "when": {
+            "answerPath": "serviceChoice",
+            "operator": "EQ",
+            "value": "REQUEST_PERSONAL_SUPPORT"
+          },
+          "nextNodeId": "personal_support_request"
+        }
+      ]
+    },
+    {
+      "id": "personal_support_request",
+      "type": "FORM",
+      "requestType": "SALES_ENQUIRY",
+      "serverValidators": [
+        "VALIDATE_CONTACT_DETAILS",
+        "VALIDATE_VAT_FOR_MARKET"
+      ],
+      "contentKeys": {
+        "heading": "contact.personalSupport.heading",
+        "privacyNotice": "contact.privacy.notice.be.v1"
+      },
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "$id": "puratos://contact-us/personal-support-request/v1",
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "title": "contact.person.firstName",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "title": "contact.person.lastName",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "title": "contact.person.email",
+            "format": "email",
+            "maxLength": 254
+          },
+          "phone": {
+            "type": "string",
+            "title": "contact.person.phone",
+            "maxLength": 40
+          },
+          "companyName": {
+            "type": "string",
+            "title": "contact.company.name",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "vatNumber": {
+            "type": "string",
+            "title": "contact.company.vatNumber",
+            "pattern": "^BE[0-9]{10}$"
+          },
+          "message": {
+            "type": "string",
+            "title": "contact.request.message",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "privacyNoticeAccepted": {
+            "type": "boolean",
+            "title": "contact.privacy.accept",
+            "const": true
+          },
+          "emailMarketingConsent": {
+            "type": "boolean",
+            "title": "contact.marketing.email.optional",
+            "default": false
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "email",
+          "companyName",
+          "vatNumber",
+          "message",
+          "privacyNoticeAccepted"
+        ],
+        "additionalProperties": false
+      },
+      "uiSchema": {
+        "firstName": {
+          "ui:widget": "PuratosText"
+        },
+        "lastName": {
+          "ui:widget": "PuratosText"
+        },
+        "email": {
+          "ui:widget": "PuratosText"
+        },
+        "phone": {
+          "ui:widget": "PuratosPhone"
+        },
+        "companyName": {
+          "ui:widget": "PuratosText"
+        },
+        "vatNumber": {
+          "ui:widget": "PuratosText"
+        },
+        "message": {
+          "ui:widget": "PuratosTextArea"
+        },
+        "privacyNoticeAccepted": {
+          "ui:widget": "PuratosCheckbox"
+        },
+        "emailMarketingConsent": {
+          "ui:widget": "PuratosCheckbox"
+        },
+        "ui:submitButtonOptions": {
+          "norender": true
+        }
+      },
+      "transitions": [
+        {
+          "when": {
+            "operator": "VALID"
+          },
+          "nextNodeId": "submit_contact_request"
+        }
+      ]
+    },
+    {
+      "id": "distributor_application",
+      "type": "FORM",
+      "requestType": "DISTRIBUTOR_APPLICATION",
+      "serverValidators": [
+        "VALIDATE_CONTACT_DETAILS",
+        "VALIDATE_VAT_FOR_MARKET",
+        "VALIDATE_DISTRIBUTOR_APPLICATION"
+      ],
+      "contentKeys": {
+        "heading": "contact.distributor.heading",
+        "privacyNotice": "contact.privacy.notice.be.v1"
+      },
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "$id": "puratos://contact-us/distributor-application/v1",
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "title": "contact.person.firstName",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "title": "contact.person.lastName",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "title": "contact.person.email",
+            "format": "email",
+            "maxLength": 254
+          },
+          "companyName": {
+            "type": "string",
+            "title": "contact.company.name",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "vatNumber": {
+            "type": "string",
+            "title": "contact.company.vatNumber",
+            "pattern": "^BE[0-9]{10}$"
+          },
+          "coverage": {
+            "type": "string",
+            "title": "contact.distributor.coverage",
+            "enum": [
+              "NATIONAL",
+              "REGIONAL"
+            ]
+          },
+          "currentActivities": {
+            "type": "string",
+            "title": "contact.distributor.currentActivities",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "privacyNoticeAccepted": {
+            "type": "boolean",
+            "title": "contact.privacy.accept",
+            "const": true
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "email",
+          "companyName",
+          "vatNumber",
+          "coverage",
+          "currentActivities",
+          "privacyNoticeAccepted"
+        ],
+        "dependencies": {
+          "coverage": {
+            "oneOf": [
+              {
+                "properties": {
+                  "coverage": {
+                    "enum": [
+                      "NATIONAL"
+                    ]
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "coverage": {
+                    "enum": [
+                      "REGIONAL"
+                    ]
+                  },
+                  "regionalCoverageText": {
+                    "type": "string",
+                    "title": "contact.distributor.regionalCoverage",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "regionalCoverageText"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "uiSchema": {
+        "firstName": {
+          "ui:widget": "PuratosText"
+        },
+        "lastName": {
+          "ui:widget": "PuratosText"
+        },
+        "email": {
+          "ui:widget": "PuratosText"
+        },
+        "companyName": {
+          "ui:widget": "PuratosText"
+        },
+        "vatNumber": {
+          "ui:widget": "PuratosText"
+        },
+        "coverage": {
+          "ui:widget": "PuratosRadio"
+        },
+        "regionalCoverageText": {
+          "ui:widget": "PuratosTextArea"
+        },
+        "currentActivities": {
+          "ui:widget": "PuratosTextArea"
+        },
+        "privacyNoticeAccepted": {
+          "ui:widget": "PuratosCheckbox"
+        },
+        "ui:submitButtonOptions": {
+          "norender": true
+        }
+      },
+      "transitions": [
+        {
+          "when": {
+            "operator": "VALID"
+          },
+          "nextNodeId": "submit_contact_request"
+        }
+      ]
+    },
+    {
+      "id": "authenticated_options",
+      "type": "FORM",
+      "trustedContext": {
+        "displayKeys": [
+          "identity.customerDisplayName",
+          "identity.accountDisplayName"
+        ],
+        "editable": false
+      },
+      "contentKeys": {
+        "heading": "contact.authenticated.heading"
+      },
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "$id": "puratos://contact-us/authenticated-options/v1",
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "contact.authenticated.action",
+            "oneOf": [
+              {
+                "const": "FAQ",
+                "title": "contact.action.faq"
+              },
+              {
+                "const": "AI_ASSISTANT",
+                "title": "contact.action.aiAssistant"
+              },
+              {
+                "const": "CALL_CUSTOMER_CARE",
+                "title": "contact.action.callCustomerCare"
+              },
+              {
+                "const": "SEND_QUESTION",
+                "title": "contact.action.sendQuestion"
+              }
+            ]
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "uiSchema": {
+        "action": {
+          "ui:widget": "PuratosRadio"
+        },
+        "ui:submitButtonOptions": {
+          "norender": true
+        }
+      },
+      "transitions": [
+        {
+          "when": {
+            "answerPath": "action",
+            "operator": "EQ",
+            "value": "FAQ"
+          },
+          "nextNodeId": "faq_action"
+        },
+        {
+          "when": {
+            "answerPath": "action",
+            "operator": "EQ",
+            "value": "AI_ASSISTANT"
+          },
+          "nextNodeId": "ai_assistant_action"
+        },
+        {
+          "when": {
+            "answerPath": "action",
+            "operator": "EQ",
+            "value": "CALL_CUSTOMER_CARE"
+          },
+          "nextNodeId": "customer_care_action"
+        },
+        {
+          "when": {
+            "answerPath": "action",
+            "operator": "EQ",
+            "value": "SEND_QUESTION"
+          },
+          "nextNodeId": "authenticated_request"
+        }
+      ]
+    },
+    {
+      "id": "authenticated_request",
+      "type": "FORM",
+      "serverDecision": "RESOLVE_CUSTOMER_REQUEST_TYPE",
+      "serverValidators": [
+        "VALIDATE_COMMERCE_REFERENCE"
+      ],
+      "trustedContext": {
+        "displayKeys": [
+          "identity.customerDisplayName",
+          "identity.accountDisplayName"
+        ],
+        "editable": false,
+        "excludedFromFormData": [
+          "customerNumber",
+          "contactNumber",
+          "crmContactId"
+        ]
+      },
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "$id": "puratos://contact-us/authenticated-request/v1",
+        "type": "object",
+        "properties": {
+          "requestCategory": {
+            "type": "string",
+            "title": "contact.request.category",
+            "enum": [
+              "GENERAL_QUESTION",
+              "ORDER_OR_DELIVERY",
+              "COMPLAINT"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "title": "contact.request.message",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "requestCategory",
+          "message"
+        ],
+        "dependencies": {
+          "requestCategory": {
+            "oneOf": [
+              {
+                "properties": {
+                  "requestCategory": {
+                    "enum": [
+                      "GENERAL_QUESTION",
+                      "COMPLAINT"
+                    ]
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "requestCategory": {
+                    "enum": [
+                      "ORDER_OR_DELIVERY"
+                    ]
+                  },
+                  "commerceReference": {
+                    "type": "object",
+                    "title": "contact.request.orderReference",
+                    "properties": {
+                      "referenceType": {
+                        "type": "string",
+                        "enum": [
+                          "ORDER",
+                          "INVOICE",
+                          "NOT_LISTED",
+                          "UNKNOWN"
+                        ]
+                      },
+                      "referenceId": {
+                        "type": "string",
+                        "maxLength": 100
+                      }
+                    },
+                    "required": [
+                      "referenceType"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "commerceReference"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "uiSchema": {
+        "requestCategory": {
+          "ui:widget": "PuratosRadio"
+        },
+        "commerceReference": {
+          "ui:field": "PuratosCommerceReferenceLookup"
+        },
+        "message": {
+          "ui:widget": "PuratosTextArea"
+        },
+        "ui:order": [
+          "requestCategory",
+          "commerceReference",
+          "message"
+        ],
+        "ui:submitButtonOptions": {
+          "norender": true
+        }
+      },
+      "transitions": [
+        {
+          "when": {
+            "operator": "VALID"
+          },
+          "nextNodeId": "submit_contact_request"
+        }
+      ]
+    },
+    {
+      "id": "submit_contact_request",
+      "type": "ACTION",
+      "actionKey": "SUBMIT_CONTACT_REQUEST",
+      "idempotencyRequired": true,
+      "onSuccessNodeId": "request_received_terminal",
+      "onBusinessReviewNodeId": "manual_review_terminal"
+    },
+    {
+      "id": "faq_action",
+      "type": "ACTION",
+      "actionKey": "OPEN_FAQ",
+      "terminalAfterAction": true
+    },
+    {
+      "id": "ai_assistant_action",
+      "type": "ACTION",
+      "actionKey": "OPEN_AI_ASSISTANT",
+      "terminalAfterAction": true
+    },
+    {
+      "id": "customer_care_action",
+      "type": "ACTION",
+      "actionKey": "CALL_CUSTOMER_CARE",
+      "terminalAfterAction": true
+    },
+    {
+      "id": "login_redirect",
+      "type": "REDIRECT",
+      "destinationKey": "MYPURATOS_LOGIN",
+      "preserveJourney": true
+    },
+    {
+      "id": "existing_customer_registration_redirect",
+      "type": "REDIRECT",
+      "destinationKey": "MYPURATOS_EXISTING_CUSTOMER_REGISTRATION",
+      "preserveJourney": true
+    },
+    {
+      "id": "new_customer_registration_redirect",
+      "type": "REDIRECT",
+      "destinationKey": "MYPURATOS_NEW_CUSTOMER_REGISTRATION",
+      "preserveJourney": true
+    },
+    {
+      "id": "distributor_finder_redirect",
+      "type": "REDIRECT",
+      "destinationKey": "DISTRIBUTOR_FINDER",
+      "preserveJourney": false
+    },
+    {
+      "id": "request_received_terminal",
+      "type": "TERMINAL",
+      "outcome": "REQUEST_ACCEPTED",
+      "contentKeys": {
+        "heading": "contact.confirmation.heading",
+        "description": "contact.confirmation.description"
+      }
+    },
+    {
+      "id": "manual_review_terminal",
+      "type": "TERMINAL",
+      "outcome": "MANUAL_REVIEW",
+      "contentKeys": {
+        "heading": "contact.review.heading",
+        "description": "contact.review.description"
+      }
+    }
+  ],
+  "serverEvaluationContract": {
+    "operation": "EVALUATE_CONTACT_JOURNEY_STEP",
+    "requestFields": [
+      "contactJourneyId",
+      "definitionVersion",
+      "nodeId",
+      "stepAttemptId",
+      "formData"
+    ],
+    "responseFields": [
+      "accepted",
+      "fieldErrors",
+      "normalizedData",
+      "nextNodeId",
+      "terminalOutcome",
+      "decisionReasonCode"
+    ],
+    "clientMaySetNextNode": false
+  },
+  "publication": {
+    "status": "DRAFT",
+    "businessOwner": "TBD",
+    "technicalOwner": "OutSystems Contact Us",
+    "approvedAt": null,
+    "publishedAt": null,
+    "contentHash": null
+  }
+}
