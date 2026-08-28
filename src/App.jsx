@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Form from '@rjsf/core';
 import validator from '@rjsf/validator-ajv8';
-import journeyDefinition from '../schema/2026-08-03-contact-us-journey-definition-draft.json';
+import journeyDefinition from '../schema/2026-08-28-contact-us-journey-definition-draft.json';
+import { classifyEmployeeCount } from './employeeRouting.js';
 
 const copy = {
   'contact.account.heading': 'Let’s get you to the right place',
@@ -18,7 +19,7 @@ const copy = {
   'contact.intent.homeBaker': 'I am a home baker looking for products',
   'contact.buyProfile.heading': 'Tell us a little about your business',
   'contact.company.businessType': 'Business type',
-  'contact.company.employeeBand': 'How many people work in your company?',
+  'contact.company.employeeCount': 'How many employees work in your company?',
   'contact.company.storeCountBand': 'How many stores do you operate?',
   'contact.serviceChoice.question': 'How would you like to continue?',
   'contact.serviceChoice.webshop': 'Register and buy through MyPuratos',
@@ -244,6 +245,31 @@ function PuratosText({ id, value, onChange, onBlur, onFocus, disabled, readonly,
   );
 }
 
+function PuratosNumber({ id, value, onChange, onBlur, onFocus, disabled, readonly, placeholder, schema }) {
+  const updateValue = (event) => {
+    const nextValue = event.target.value;
+    onChange(nextValue === '' ? undefined : Number(nextValue));
+  };
+  return (
+    <input
+      className="text-control"
+      id={id}
+      value={value ?? ''}
+      type="number"
+      inputMode="numeric"
+      min={schema?.minimum}
+      max={schema?.maximum}
+      step={schema?.multipleOf || 1}
+      disabled={disabled}
+      readOnly={readonly}
+      placeholder={placeholder || 'Enter the exact number'}
+      onChange={updateValue}
+      onBlur={(event) => onBlur?.(id, event.target.value === '' ? undefined : Number(event.target.value))}
+      onFocus={(event) => onFocus?.(id, event.target.value)}
+    />
+  );
+}
+
 function PuratosPhone(props) {
   return <PuratosText {...props} placeholder="+32 4XX XX XX XX" />;
 }
@@ -357,10 +383,21 @@ function ErrorListTemplate({ errors }) {
   );
 }
 
+function transformValidationErrors(errors) {
+  return errors.map((error) => {
+    if (error.name === 'minimum') return { ...error, message: 'Enter at least 1 employee.' };
+    if (error.name === 'type' && error.params?.type === 'integer') {
+      return { ...error, message: 'Enter a whole number of employees.' };
+    }
+    return { ...error, message: error.message?.replace('must', 'Please') };
+  });
+}
+
 const widgets = {
   PuratosRadio,
   PuratosSelect,
   PuratosText,
+  PuratosNumber,
   PuratosTextArea,
   PuratosPhone,
   PuratosCheckbox,
@@ -486,7 +523,7 @@ function JourneySidebar({ current, history, mode, onModeChange, onRestart }) {
         <dl>
           <div><dt>Market</dt><dd>Belgium · 0005</dd></div>
           <div><dt>State</dt><dd><span className="pilot-dot" /> Pilot</dd></div>
-          <div><dt>Definition</dt><dd>08-03-01</dd></div>
+          <div><dt>Definition</dt><dd>08-28-01</dd></div>
         </dl>
       </div>
 
@@ -534,7 +571,8 @@ function FormNode({ node, formData, onChange, onSubmit, formRef }) {
         }}
         onChange={({ formData: nextData }) => onChange(nextData)}
         onSubmit={({ formData: submittedData }) => onSubmit(submittedData)}
-        transformErrors={(errors) => errors.map((error) => ({ ...error, message: error.message?.replace('must', 'Please') }))}
+        onError={() => undefined}
+        transformErrors={transformValidationErrors}
       />
     </>
   );
@@ -546,13 +584,14 @@ function DecisionNode({ node, answers, result, onEvaluate, onContinue }) {
     SELF_SERVICE_ONLY: ['Self-service recommended', 'This profile is best served through MyPuratos registration and the webshop.'],
     SELF_SERVICE_OR_PERSONAL: ['Two suitable routes', 'Offer MyPuratos self-service or a personal conversation with a sales representative.'],
     PERSONAL_ASSISTANCE: ['Personal assistance recommended', 'Route this prospect to a sales representative for follow-up.'],
+    MANUAL_REVIEW: ['Manual review required', 'The employee count could not be classified safely.'],
   };
   return (
     <div className="decision-workspace">
       <div className="decision-inputs">
         <span>Inputs available to the decision</span>
         <div><small>Business type</small><strong>{label(profile.businessType || '—')}</strong></div>
-        <div><small>Employee band</small><strong>{label(profile.employeeBand || '—')}</strong></div>
+        <div><small>Exact employee count</small><strong>{profile.employeeCount ?? '—'}</strong></div>
         <div><small>Market</small><strong>Belgium · sales org 0005</strong></div>
       </div>
       <div className={`decision-result ${result ? 'is-resolved' : ''}`}>
@@ -569,6 +608,7 @@ function DecisionNode({ node, answers, result, onEvaluate, onContinue }) {
             <span className="eyebrow">Decision returned</span>
             <h3>{resultLabels[result.outcome]?.[0]}</h3>
             <p>{resultLabels[result.outcome]?.[1]}</p>
+            {result.employeeBand && <p className="decision-classification">Internal routing band: <strong>{label(result.employeeBand)}</strong></p>}
             <code>{result.outcome}</code>
             <button className="primary-button" type="button" onClick={onContinue}>Continue to returned node <ChevronRight /></button>
           </>
@@ -581,12 +621,14 @@ function DecisionNode({ node, answers, result, onEvaluate, onContinue }) {
 function ActionNode({ node, processing, onAction, answers, completed }) {
   if (node.id === 'submit_contact_request') {
     const request = answers.personal_support_request || answers.distributor_application || answers.authenticated_request || {};
+    const employeeCount = answers.buy_products_profile?.employeeCount;
     return (
       <div className="submission-review">
         <div className="review-status"><span className="status-dot" /> Ready for durable intake</div>
         <dl>
           <div><dt>Request type</dt><dd>{nodeMap[Object.keys(answers).find((id) => nodeMap[id]?.requestType)]?.requestType || 'Customer request'}</dd></div>
           <div><dt>Customer context</dt><dd>{request.companyName || 'Authenticated MyPuratos account'}</dd></div>
+          {employeeCount !== undefined && <div><dt>Employees for C4C</dt><dd>{employeeCount} (exact value)</dd></div>}
           <div><dt>Definition</dt><dd>{journeyDefinition.manifest.definitionVersion}</dd></div>
           <div><dt>Target</dt><dd>OutSystems durable Contact Intake</dd></div>
         </dl>
@@ -691,13 +733,9 @@ export default function App() {
   };
 
   const evaluateDecision = () => {
-    const employeeBand = answers.buy_products_profile?.employeeBand;
-    const outcome = employeeBand === 'ONE'
-      ? 'SELF_SERVICE_ONLY'
-      : employeeBand === 'TWO_TO_FIVE'
-        ? 'SELF_SERVICE_OR_PERSONAL'
-        : 'PERSONAL_ASSISTANCE';
-    setDecisionResult({ outcome, nextId: current.allowedOutcomes[outcome] });
+    const employeeCount = answers.buy_products_profile?.employeeCount;
+    const { employeeBand, outcome } = classifyEmployeeCount(employeeCount);
+    setDecisionResult({ employeeBand, outcome, nextId: current.allowedOutcomes[outcome] });
   };
 
   const runAction = async () => {

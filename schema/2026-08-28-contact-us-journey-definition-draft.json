@@ -3,8 +3,8 @@
   "draftStatus": "ARCHITECTURE_DRAFT",
   "manifest": {
     "definitionId": "contact-us",
-    "definitionVersion": "BE-0005-2026-08-03-01-draft",
-    "configurationVersion": "BE-0005-2026-08-03-01",
+    "definitionVersion": "BE-0005-2026-08-28-01-draft",
+    "configurationVersion": "BE-0005-2026-08-28-01",
     "renderingContractVersion": "1.0",
     "jsonSchemaDialect": "http://json-schema.org/draft-07/schema#",
     "rjsfCompatibility": "5.24.x",
@@ -15,7 +15,7 @@
     "experienceVariant": "AEM_TARGET",
     "entryNodeId": "account_access",
     "safeFallback": "LEGACY",
-    "effectiveFrom": "2026-08-03T00:00:00Z",
+    "effectiveFrom": "2026-08-28T00:00:00Z",
     "effectiveTo": null
   },
   "definitionPolicy": {
@@ -29,7 +29,8 @@
       "This is an illustrative Belgium-resolved definition; VAT is present because the example market requires it.",
       "Another market receives its own immutable resolved version without the VAT property when VAT is not applicable.",
       "The example entryNodeId is anonymous; OutSystems returns authenticated_options for a server-verified authenticated journey.",
-      "AEM may render allowed transitions for usability, but OutSystems validates the current node and returns the authoritative next node."
+      "AEM may render allowed transitions for usability, but OutSystems validates the current node and returns the authoritative next node.",
+      "Customers provide an exact positive employee count. OutSystems preserves that value for C4C and derives any employee band only inside the versioned server decision."
     ]
   },
   "allowedCatalogue": {
@@ -38,6 +39,7 @@
       "PuratosRadio",
       "PuratosSelect",
       "PuratosText",
+      "PuratosNumber",
       "PuratosTextArea",
       "PuratosPhone",
       "PuratosCommerceReferenceLookup"
@@ -280,20 +282,15 @@
               "OTHER"
             ]
           },
-          "employeeBand": {
-            "type": "string",
-            "title": "contact.company.employeeBand",
-            "enum": [
-              "ONE",
-              "TWO_TO_FIVE",
-              "SIX_TO_TWENTY",
-              "MORE_THAN_TWENTY"
-            ]
+          "employeeCount": {
+            "type": "integer",
+            "title": "contact.company.employeeCount",
+            "minimum": 1
           }
         },
         "required": [
           "businessType",
-          "employeeBand"
+          "employeeCount"
         ],
         "dependencies": {
           "businessType": {
@@ -341,15 +338,16 @@
         "businessType": {
           "ui:widget": "PuratosSelect"
         },
-        "employeeBand": {
-          "ui:widget": "PuratosRadio"
+        "employeeCount": {
+          "ui:widget": "PuratosNumber",
+          "ui:help": "Enter the exact current number. Puratos uses it for CRM context and derives routing bands internally."
         },
         "storeCountBand": {
           "ui:widget": "PuratosSelect"
         },
         "ui:order": [
           "businessType",
-          "employeeBand",
+          "employeeCount",
           "storeCountBand"
         ],
         "ui:submitButtonOptions": {
@@ -369,6 +367,12 @@
       "id": "service_model_decision",
       "type": "SERVER_DECISION",
       "decisionKey": "EVALUATE_SERVICE_MODEL",
+      "inputBindings": {
+        "employeeCount": "buy_products_profile.employeeCount",
+        "businessType": "buy_products_profile.businessType"
+      },
+      "ruleSetKey": "SERVICE_MODEL_BY_EMPLOYEE_COUNT",
+      "ruleSetVersion": "BE-0005-2026-08-28-01",
       "allowedOutcomes": {
         "SELF_SERVICE_ONLY": "new_customer_registration_redirect",
         "SELF_SERVICE_OR_PERSONAL": "service_model_choice",

@@ -1,6 +1,6 @@
 # Puratos Contact Us RJSF demo
 
-Runnable prototype of the recommended AEM/React rendering model. The application imports its source-controlled [`journey-definition draft`](./schema/2026-08-03-contact-us-journey-definition-draft.json), renders its `FORM` nodes with RJSF and visualizes the boundary where OutSystems validates and chooses the authoritative next node.
+Runnable prototype of the recommended AEM/React rendering model. The application imports its source-controlled [`journey-definition draft`](./schema/2026-08-28-contact-us-journey-definition-draft.json), renders its `FORM` nodes with RJSF and visualizes the boundary where OutSystems validates and chooses the authoritative next node.
 
 ## Required software
 
@@ -23,12 +23,13 @@ The setup program uses only Node.js standard-library APIs and works on Linux, ma
 node scripts/setup.mjs
 ```
 
-It performs four deterministic checks and actions:
+It performs five deterministic checks and actions:
 
 1. Verifies the supported Node.js version and the presence of the lockfile.
 2. Installs the exact dependency tree with `npm ci`.
 3. Runs `npm audit --audit-level=low`.
-4. Creates the production bundle with `npm run build`.
+4. Tests the internal employee-count routing boundaries with `npm test`.
+5. Creates the production bundle with `npm run build`.
 
 The equivalent npm command is `npm run setup`. The script stops immediately and returns a non-zero exit code if any step fails.
 
@@ -50,9 +51,18 @@ npm run build
 npm run preview
 ```
 
+## Routing tests
+
+```bash
+npm test
+```
+
+The boundary tests cover the retained routing bands: `1`, `2-5`, `6-20` and `21+`. The form submits only the exact positive integer; the prototype's `employeeRouting.js` simulates the versioned OutSystems rule set that derives the internal band and next-node outcome.
+
 ## Demonstrated behavior
 
 - Anonymous and authenticated entry points.
+- Exact employee-count capture, with internal range classification for simulated server routing.
 - Conditional bakery-chain store count.
 - Simulated OutSystems service-model decision.
 - Distributor national/regional conditional fields.
@@ -72,6 +82,6 @@ npm run preview
 - Production build succeeds with the pinned RJSF 5.24.13 / AJV 8.18.0 and Vite 8.2.0 dependency line.
 - `npm audit --audit-level=low` reports zero known vulnerabilities.
 - Desktop and 390×844 mobile browser QA completed with no console errors or warnings.
-- Verified anonymous qualification, bakery-chain and distributor dependencies, explicit unchecked consent, OutSystems decision simulation, authenticated order lookup and durable intake completion.
+- Verified anonymous qualification, exact employee-count capture and boundary routing, bakery-chain and distributor dependencies, explicit unchecked consent, OutSystems decision simulation, authenticated order lookup and durable intake completion.
 
 The local transition evaluator and destination actions are explicitly marked as simulations. In the target architecture, AEM posts every step to OutSystems and uses the server-returned next node.

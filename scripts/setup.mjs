@@ -52,6 +52,7 @@ if (!existsSync(resolve(applicationDirectory, 'package-lock.json'))) {
 run('Checking npm', npmCommand, ['--version']);
 run('Installing locked dependencies', npmCommand, ['ci', '--no-audit', '--no-fund']);
 run('Checking known dependency vulnerabilities', npmCommand, ['audit', '--audit-level=low']);
+run('Testing employee-count routing boundaries', npmCommand, ['test']);
 run('Building the production bundle', npmCommand, ['run', 'build']);
 
 console.log('\nSetup complete. Start the local application with: npm run dev');
